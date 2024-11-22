@@ -1,104 +1,38 @@
-name: Build Qt6 Rust GUI
+name: Build
 
 on:
     push:
         branches: [master]
     pull_request:
         branches: [master]
+    workflow_dispatch:
+
+env:
+    CARGO_TERM_COLOR: always
 
 jobs:
-    build-linux:
-        name: Build on Linux
-        runs-on: ubuntu-latest
+    qt6:
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                ver: [6.2.0, 6.5.0]
+        env:
+            QT_QPA_PLATFORM: offscreen
+        runs-on: ${{ matrix.os }}
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
-
-            - name: Install system dependencies
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y \
-                    python3-pip \
-                    libgl1-mesa-dev
-
-            - name: Install aqtinstall
-              run: pip3 install aqtinstall
-
-            - name: Install Qt6
-              run: |
-                  python3 -m aqt install-qt linux desktop 6.5.0 gcc_64
-              env:
-                  AQT_CACHE: ${{ runner.temp }}/aqtcache
-
-            - name: Set Qt environment variables
-              run: |
-                  echo "QT_DIR=$HOME/Qt/6.5.0/gcc_64" >> $GITHUB_ENV
-                  echo "LD_LIBRARY_PATH=$HOME/Qt/6.5.0/gcc_64/lib:\$LD_LIBRARY_PATH" >> $GITHUB_ENV
-                  echo "QMAKE=$HOME/Qt/6.5.0/gcc_64/bin/qmake" >> $GITHUB_ENV
-                  echo "PATH=$HOME/Qt/6.5.0/gcc_64/bin:\$PATH" >> $GITHUB_ENV
-
-            - name: Build
-              run: cargo build --release
-
-    build-macos:
-        name: Build on macOS
-        runs-on: macos-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
-
-            - name: Install system dependencies
-              run: |
-                  brew update
-                  brew install python
-
-            - name: Install aqtinstall
-              run: |
-                  python3 -m pip install aqtinstall
-
-            - name: Install Qt6
-              run: |
-                  python3 -m aqt install-qt mac desktop 6.5.0 clang_64
-              env:
-                  AQT_CACHE: ${{ runner.temp }}/aqtcache
-
-            - name: Set Qt environment variables
-              run: |
-                  echo "QT_DIR=$HOME/Qt/6.5.0/clang_64" >> $GITHUB_ENV
-                  echo "QMAKE=$HOME/Qt/6.5.0/clang_64/bin/qmake" >> $GITHUB_ENV
-                  echo "PATH=$HOME/Qt/6.5.0/clang_64/bin:\$PATH" >> $GITHUB_ENV
-
-            - name: Build
-              run: cargo build --release
-
-    build-windows:
-        name: Build on Windows
-        runs-on: windows-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
-
-            - name: Install Python
-              uses: actions/setup-python@v4
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@stable
+            - uses: Swatinem/rust-cache@v2
               with:
-                  python-version: "3.x"
+                  key: rust_cache6
 
-            - name: Install aqtinstall
+            - name: Install Qt
+              uses: jurplel/install-qt-action@v4
+              with:
+                  version: ${{ matrix.ver }}
+                  cache: true
+            - name: Test
               run: |
-                  pip install aqtinstall
-
-            - name: Install Qt6
-              run: |
-                  python -m aqt install-qt windows desktop 6.5.0 win64_msvc2019_64
-              env:
-                  AQT_CACHE: ${{ runner.temp }}\aqtcache
-
-            - name: Set Qt environment variables
-              shell: pwsh
-              run: |
-                  echo "QT_DIR=C:\Qt\6.5.0\msvc2019_64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-                  echo "QMAKE=C:\Qt\6.5.0\msvc2019_64\bin\qmake.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-                  echo "PATH=C:\Qt\6.5.0\msvc2019_64\bin;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-            - name: Build
-              run: cargo build --release
+                  cargo test --manifest-path qttypes/Cargo.toml
+                  cargo test --manifest-path qmetaobject_impl/Cargo.toml
+                  cargo test --manifest-path qmetaobject/Cargo.toml
