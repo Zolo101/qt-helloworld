@@ -14,8 +14,8 @@ jobs:
     qt6:
         strategy:
             matrix:
-                os: [ubuntu-latest, windows-latest]
-                ver: [6.2.0, 6.5.0]
+                os: [ubuntu-latest, windows-latest, macos-latest]
+                ver: [6.5.0]
         env:
             QT_QPA_PLATFORM: offscreen
         runs-on: ${{ matrix.os }}
@@ -31,3 +31,9 @@ jobs:
               with:
                   version: ${{ matrix.ver }}
                   cache: true
+
+            - name: Upload Artifact
+              uses: actions/upload-artifact@v3
+              with:
+                  name: program-artifact
+                  path: target/release/program
