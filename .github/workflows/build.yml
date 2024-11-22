@@ -1,0 +1,90 @@
+name: Build Qt6 Rust GUI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build-linux:
+        name: Build on Linux
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Install dependencies
+              run: sudo apt-get update && sudo apt-get install -y python3-pip
+
+            - name: Install aqtinstall
+              run: pip3 install aqtinstall
+
+            - name: Install Qt6
+              run: |
+                  python3 -m aqt install-qt linux desktop 6.5.0 gcc_64
+              env:
+                  AQT_CACHE: ${{ runner.temp }}/aqtcache
+
+            - name: Set Qt environment variables
+              run: |
+                  echo "QT_DIR=$HOME/Qt/6.5.0/gcc_64" >> $GITHUB_ENV
+                  echo "$HOME/Qt/6.5.0/gcc_64/bin" >> $GITHUB_PATH
+                  echo "LD_LIBRARY_PATH=$HOME/Qt/6.5.0/gcc_64/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+            - name: Build
+              run: cargo build --release
+
+    build-macos:
+        name: Build on macOS
+        runs-on: macos-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Install aqtinstall
+              run: pip3 install aqtinstall
+
+            - name: Install Qt6
+              run: |
+                  python3 -m aqt install-qt mac desktop 6.5.0 clang_64
+              env:
+                  AQT_CACHE: ${{ runner.temp }}/aqtcache
+
+            - name: Set Qt environment variables
+              run: |
+                  echo "QT_DIR=$HOME/Qt/6.5.0/clang_64" >> $GITHUB_ENV
+                  echo "$HOME/Qt/6.5.0/clang_64/bin" >> $GITHUB_PATH
+
+            - name: Build
+              run: cargo build --release
+
+    build-windows:
+        name: Build on Windows
+        runs-on: windows-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Install Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.x"
+
+            - name: Install aqtinstall
+              run: pip install aqtinstall
+
+            - name: Install Qt6
+              run: |
+                  python -m aqt install-qt windows desktop 6.5.0 win64_msvc2019_64
+              env:
+                  AQT_CACHE: ${{ runner.temp }}\aqtcache
+
+            - name: Set Qt environment variables
+              shell: pwsh
+              run: |
+                  echo "QT_DIR=C:\Qt\6.5.0\msvc2019_64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+                  echo "C:\Qt\6.5.0\msvc2019_64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+            - name: Build
+              run: cargo build --release
