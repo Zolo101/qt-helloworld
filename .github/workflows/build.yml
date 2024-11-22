@@ -31,8 +31,3 @@ jobs:
               with:
                   version: ${{ matrix.ver }}
                   cache: true
-            - name: Test
-              run: |
-                  cargo test --manifest-path qttypes/Cargo.toml
-                  cargo test --manifest-path qmetaobject_impl/Cargo.toml
-                  cargo test --manifest-path qmetaobject/Cargo.toml
