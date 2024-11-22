@@ -14,8 +14,14 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v3
 
-            - name: Install dependencies
-              run: sudo apt-get update && sudo apt-get install -y python3-pip
+            - name: Install system dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                    python3-pip \
+                    qt6-base-dev \
+                    qt6-base-dev-tools \
+                    libgl1-mesa-dev
 
             - name: Install aqtinstall
               run: pip3 install aqtinstall
@@ -31,6 +37,7 @@ jobs:
                   echo "QT_DIR=$HOME/Qt/6.5.0/gcc_64" >> $GITHUB_ENV
                   echo "$HOME/Qt/6.5.0/gcc_64/bin" >> $GITHUB_PATH
                   echo "LD_LIBRARY_PATH=$HOME/Qt/6.5.0/gcc_64/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+                  echo "QMAKE=$HOME/Qt/6.5.0/gcc_64/bin/qmake" >> $GITHUB_ENV
 
             - name: Build
               run: cargo build --release
@@ -42,8 +49,14 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v3
 
+            - name: Install system dependencies
+              run: |
+                  brew update
+                  brew install python
+
             - name: Install aqtinstall
-              run: pip3 install aqtinstall
+              run: |
+                  python3 -m pip install aqtinstall
 
             - name: Install Qt6
               run: |
@@ -55,6 +68,7 @@ jobs:
               run: |
                   echo "QT_DIR=$HOME/Qt/6.5.0/clang_64" >> $GITHUB_ENV
                   echo "$HOME/Qt/6.5.0/clang_64/bin" >> $GITHUB_PATH
+                  echo "QMAKE=$HOME/Qt/6.5.0/clang_64/bin/qmake" >> $GITHUB_ENV
 
             - name: Build
               run: cargo build --release
@@ -72,7 +86,8 @@ jobs:
                   python-version: "3.x"
 
             - name: Install aqtinstall
-              run: pip install aqtinstall
+              run: |
+                  pip install aqtinstall
 
             - name: Install Qt6
               run: |
@@ -85,6 +100,7 @@ jobs:
               run: |
                   echo "QT_DIR=C:\Qt\6.5.0\msvc2019_64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
                   echo "C:\Qt\6.5.0\msvc2019_64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+                  echo "QMAKE=C:\Qt\6.5.0\msvc2019_64\bin\qmake.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
             - name: Build
               run: cargo build --release
